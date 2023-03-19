@@ -4,7 +4,7 @@ import numpy as np
 
 fileH = r'C:\Users\Julian\Desktop\A70H.txt'
 fileE = r'C:\Users\Julian\Desktop\A70E.txt'
-R = 10
+R = 7
 Z0 = 50
 
 
@@ -40,7 +40,7 @@ def to_rad(_list: list | np.ndarray) -> list:
 def to_E(_list: list | np.ndarray) -> list:
     global R
     global Z0
-    return [np.sqrt(e * 0.001 / (4 * np.pi * R ** 2) * Z0) for e in _list]
+    return [np.sqrt((e / (4 * np.pi * (R ** 2))) * Z0) for e in _list]
 
 
 def convert_to_dB(_list: list | np.ndarray) -> list:
@@ -94,6 +94,7 @@ def polar_plot(x: list | np.ndarray, y: list | np.ndarray, unit: str, scale: tup
     plt.ylabel(unit, loc='bottom')
     plt.ylim(scale)
 
+    ax.set_theta_zero_location("N")
     ax.set_title(title, va='top')
     # plt.axis('equal')
     plt.show()
@@ -101,15 +102,17 @@ def polar_plot(x: list | np.ndarray, y: list | np.ndarray, unit: str, scale: tup
 
 def plot(x: list | np.ndarray, y: list | np.ndarray, plane: str):
     x_angles = angles(x)
-    y_normalized = normalize(y)
     y_linear = linearize(y)
+    y_normalized = normalize(y)
     # y_dB = convert_to_dB(y_linear)
+    y_E = to_E(y_linear)
     y_E_linear = normalize(to_E(y_linear))
-    linear = (0, 1.1)
-    logarithmic = (-30.5, 0)
+    y_E_dB = convert_to_dB(y_E)
+    linear = (-0.1, 1.1)
+    logarithmic = (-30.5, 0.5)
 
     # Wykres mocy w funkcji kąta obrotu anteny we współrzędnych prostokątnych w skali liniowej
-    power_linear_title = f'Wykres zależności mocy odbieranej ' \
+    power_linear_title = f'Unormowany wykres zależności mocy odbieranej ' \
                          f'od\nkąta obrotu anteny w płaszczyźnie {plane} (skala liniowa).\n'
     polar_plot(x_angles, y_normalized, unit='Moc [mW]', scale=linear, title=power_linear_title)
     square_plot(x_angles, y_normalized, unit='Moc [mW]', scale=linear, title=power_linear_title)
@@ -121,20 +124,21 @@ def plot(x: list | np.ndarray, y: list | np.ndarray, plane: str):
     # square_plot(x_angles, y_dB, unit='Moc [dB]', scale=(-30.5, 0.5), title=power_dB_title)
 
     # Wykres pola elektrycznego w funkcji kąta obrotu anteny we współrzędnych prostokątnych w skali liniowej
-    E_linear_title = f'Wykres natężenia pola elektrycznego ' \
+    E_linear_title = f'Unormowany wykres natężenia pola elektrycznego w zależnośći' \
                      f'od\nkąta obrotu anteny w płaszczyźnie {plane} (skala liniowa).\n'
     polar_plot(x_angles, y_E_linear, unit='Natężenie pola elektrycznego [mV/m]',
-               scale=logarithmic, title=E_linear_title)
+               scale=linear, title=E_linear_title)
     square_plot(x_angles, y_E_linear, unit='Natężenie pola elektrycznego [mV/m]',
-                scale=logarithmic, title=E_linear_title)
+                scale=linear, title=E_linear_title)
+    # print(y_E_linear)
 
     # Wykres pola elektrycznego w funkcji kąta obrotu anteny we współrzędnych prostokątnych w skali logarytmicznej
-    E_linear_title = f'Wykres natężenia pola elektrycznego ' \
-                     f'od\nkąta obrotu anteny w płaszczyźnie {plane} (skala liniowa).\n'
-    polar_plot(x_angles, y_E_linear, unit='Natężenie pola elektrycznego [mV/m]',
-               scale=logarithmic, title=E_linear_title)
-    square_plot(x_angles, y_E_linear, unit='Natężenie pola elektrycznego [mV/m]',
-                scale=logarithmic, title=E_linear_title)
+    E_dB_title = f'Wykres natężenia pola elektrycznego w zależności' \
+                     f'od\nkąta obrotu anteny w płaszczyźnie {plane} (skala logarytmiczna).\n'
+    polar_plot(x_angles, y_E_dB, unit='Natężenie pola elektrycznego [mV/m]',
+               scale=logarithmic, title=E_dB_title)
+    square_plot(x_angles, y_E_dB, unit='Natężenie pola elektrycznego [mV/m]',
+                scale=logarithmic, title=E_dB_title)
 
 
 def main():
