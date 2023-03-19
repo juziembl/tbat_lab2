@@ -4,7 +4,7 @@ import numpy as np
 
 fileH = r'C:\Users\Julian\Desktop\A70H.txt'
 fileE = r'C:\Users\Julian\Desktop\A70E.txt'
-R = 7
+R = 10
 Z0 = 50
 
 
@@ -40,11 +40,15 @@ def to_rad(_list: list | np.ndarray) -> list:
 def to_E(_list: list | np.ndarray) -> list:
     global R
     global Z0
-    return [np.sqrt(e / (4 * np.pi * R ** 2) * Z0) for e in _list]
+    return [np.sqrt(e * 0.001 / (4 * np.pi * R ** 2) * Z0) for e in _list]
 
 
 def convert_to_dB(_list: list | np.ndarray) -> list:
     return [10 * np.log10(e / max(_list)) for e in _list]
+
+
+def get_scale(_list: list | np.ndarray) -> tuple[float, float]:
+    return min(_list) - 0.0000001 * min(_list), max(_list) + 0.0000001 * max(_list)
 
 
 def split_lr(_list) -> tuple[list, list]:
@@ -65,7 +69,7 @@ def read_file(file_path) -> list:
         return res
 
 
-def square_plot(x: list | np.ndarray, y: list | np.ndarray, unit: str, scale: tuple[int, int] = (0, 1.1),
+def square_plot(x: list | np.ndarray, y: list | np.ndarray, unit: str, scale: tuple[float, float] = (0, 1.1),
                 title: str = 'Wykres prostokątny'):
     plt.plot(angles(x), y)
     plt.grid('on')
@@ -73,6 +77,7 @@ def square_plot(x: list | np.ndarray, y: list | np.ndarray, unit: str, scale: tu
     plt.title(title)
     plt.ylabel(unit)
     plt.ylim(scale)
+    # plt.axis('equal')
     # plt.ylim([min(y), max(y)])
     # print(title)
     plt.show()
@@ -83,12 +88,14 @@ def polar_plot(x: list | np.ndarray, y: list | np.ndarray, unit: str, scale: tup
     fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
     x = to_rad(x)
     ax.plot(x, y)
-    ax.set_rticks(np.linspace(min(y), max(y), 7))  # Less radial ticks
+    ax.set_rticks(np.linspace(*scale, 7))  # Less radial ticks
     ax.set_rlabel_position(val_to_deg(-np.pi * 5 / 7))  # Move radial labels away from plotted line
     ax.grid(True)
     plt.ylabel(unit, loc='bottom')
+    plt.ylim(scale)
 
     ax.set_title(title, va='top')
+    # plt.axis('equal')
     plt.show()
 
 
@@ -96,20 +103,38 @@ def plot(x: list | np.ndarray, y: list | np.ndarray, plane: str):
     x_angles = angles(x)
     y_normalized = normalize(y)
     y_linear = linearize(y)
-    y_dB = convert_to_dB(y_linear)
+    # y_dB = convert_to_dB(y_linear)
+    y_E_linear = normalize(to_E(y_linear))
+    linear = (0, 1.1)
+    logarithmic = (-30.5, 0)
+
     # Wykres mocy w funkcji kąta obrotu anteny we współrzędnych prostokątnych w skali liniowej
     power_linear_title = f'Wykres zależności mocy odbieranej ' \
                          f'od\nkąta obrotu anteny w płaszczyźnie {plane} (skala liniowa).\n'
-    polar_plot(x_angles, y_normalized, unit='Moc [mW]', title=power_linear_title)
-    square_plot(x_angles, y_normalized, unit='Moc [mW]', title=power_linear_title)
+    polar_plot(x_angles, y_normalized, unit='Moc [mW]', scale=linear, title=power_linear_title)
+    square_plot(x_angles, y_normalized, unit='Moc [mW]', scale=linear, title=power_linear_title)
 
-    # Wykres mocy w funkcji kąta obrotu anteny we współrzędnych prostokątnych w skali logarytmicznej
-    power_dB_title = f'Wykres zależności mocy odbieranej ' \
-                     f'od\nkąta obrotu anteny w płaszczyźnie {plane} (skala logarytmiczna).\n'
-    print("y_db: ", y_dB)
-    print("y: ", y)
-    polar_plot(x_angles, y_dB, unit='Moc [dB]', title=power_dB_title)
-    square_plot(x_angles, y_dB, unit='Moc [dB]', scale=(-30, 0.5), title=power_dB_title)
+    # # Wykres mocy w funkcji kąta obrotu anteny we współrzędnych prostokątnych w skali logarytmicznej
+    # power_dB_title = f'Wykres zależności mocy odbieranej ' \
+    #                  f'od\nkąta obrotu anteny w płaszczyźnie {plane} (skala logarytmiczna).\n'
+    # polar_plot(x_angles, y_dB, unit='Moc [dB]', scale=(-30.5, 0.5), title=power_dB_title)
+    # square_plot(x_angles, y_dB, unit='Moc [dB]', scale=(-30.5, 0.5), title=power_dB_title)
+
+    # Wykres pola elektrycznego w funkcji kąta obrotu anteny we współrzędnych prostokątnych w skali liniowej
+    E_linear_title = f'Wykres natężenia pola elektrycznego ' \
+                     f'od\nkąta obrotu anteny w płaszczyźnie {plane} (skala liniowa).\n'
+    polar_plot(x_angles, y_E_linear, unit='Natężenie pola elektrycznego [mV/m]',
+               scale=logarithmic, title=E_linear_title)
+    square_plot(x_angles, y_E_linear, unit='Natężenie pola elektrycznego [mV/m]',
+                scale=logarithmic, title=E_linear_title)
+
+    # Wykres pola elektrycznego w funkcji kąta obrotu anteny we współrzędnych prostokątnych w skali logarytmicznej
+    E_linear_title = f'Wykres natężenia pola elektrycznego ' \
+                     f'od\nkąta obrotu anteny w płaszczyźnie {plane} (skala liniowa).\n'
+    polar_plot(x_angles, y_E_linear, unit='Natężenie pola elektrycznego [mV/m]',
+               scale=logarithmic, title=E_linear_title)
+    square_plot(x_angles, y_E_linear, unit='Natężenie pola elektrycznego [mV/m]',
+                scale=logarithmic, title=E_linear_title)
 
 
 def main():
