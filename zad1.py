@@ -4,7 +4,7 @@ import numpy as np
 
 fileH = r'C:\Users\Julian\Desktop\A70H.txt'
 fileE = r'C:\Users\Julian\Desktop\A70E.txt'
-R = 7
+R = 8
 Z0 = 50
 
 
@@ -37,10 +37,10 @@ def to_rad(_list: list | np.ndarray) -> list:
     return [val_to_rad(e) for e in _list]
 
 
-def to_E(_list: list | np.ndarray) -> list:
+def calculate_E(_list: list | np.ndarray) -> list:
     global R
     global Z0
-    return [np.sqrt((e / (4 * np.pi * (R ** 2))) * Z0) for e in _list]
+    return [np.sqrt(((0.001 * e) / (4 * np.pi * (R ** 2))) * Z0) for e in _list]
 
 
 def convert_to_dB(_list: list | np.ndarray) -> list:
@@ -105,8 +105,8 @@ def plot(x: list | np.ndarray, y: list | np.ndarray, plane: str):
     y_linear = linearize(y)
     y_normalized = normalize(y)
     # y_dB = convert_to_dB(y_linear)
-    y_E = to_E(y_linear)
-    y_E_linear = normalize(to_E(y_linear))
+    y_E = calculate_E(y_linear)
+    y_E_linear = normalize(calculate_E(y_linear))
     y_E_dB = convert_to_dB(y_E)
     linear = (-0.1, 1.1)
     logarithmic = (-30.5, 0.5)
