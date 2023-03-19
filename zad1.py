@@ -2,9 +2,9 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 import numpy as np
 
-file1 = r'C:\Users\Julian\Desktop\A70E.txt'
-file2 = r'C:\Users\Julian\Desktop\A70H.txt'
-R = 36 * 10 ** 6
+fileH = r'C:\Users\Julian\Desktop\A70H.txt'
+fileE = r'C:\Users\Julian\Desktop\A70E.txt'
+R = 7
 Z0 = 50
 
 
@@ -40,7 +40,11 @@ def to_rad(_list: list | np.ndarray) -> list:
 def to_E(_list: list | np.ndarray) -> list:
     global R
     global Z0
-    return [np.sqrt(e / (4 * np.pi * R**2) * Z0) for e in _list]
+    return [np.sqrt(e / (4 * np.pi * R ** 2) * Z0) for e in _list]
+
+
+def convert_to_dB(_list: list | np.ndarray) -> list:
+    return [10 * np.log10(e / max(_list)) for e in _list]
 
 
 def split_lr(_list) -> tuple[list, list]:
@@ -61,59 +65,63 @@ def read_file(file_path) -> list:
         return res
 
 
-def square_plot(x: list | np.ndarray, y: list | np.ndarray, unit: str, axis='equal', title: str = 'Wykres prostokątny'):
+def square_plot(x: list | np.ndarray, y: list | np.ndarray, unit: str, scale: tuple[int, int] = (0, 1.1),
+                title: str = 'Wykres prostokątny'):
     plt.plot(angles(x), y)
     plt.grid('on')
-    plt.axis(axis)
+    # plt.axis(axis)
     plt.title(title)
     plt.ylabel(unit)
-    print(title)
-    # plt.ylim(min(y), max(y))
+    plt.ylim(scale)
+    # plt.ylim([min(y), max(y)])
+    # print(title)
     plt.show()
 
 
-def polar_plot_decibel(x: list | np.ndarray, y: list | np.ndarray, unit: str, title: str = 'Wykres polarny'):
+def polar_plot(x: list | np.ndarray, y: list | np.ndarray, unit: str, scale: tuple[float, float] = (0, 1.0),
+               title: str = 'Wykres polarny'):
     fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
     x = to_rad(x)
-    print(y)
-    print(min(y))
-    print(max(y))
     ax.plot(x, y)
-    ax.set_rticks(np.linspace(-95, -60, 5))  # Less radial ticks
+    ax.set_rticks(np.linspace(min(y), max(y), 7))  # Less radial ticks
     ax.set_rlabel_position(val_to_deg(-np.pi * 5 / 7))  # Move radial labels away from plotted line
     ax.grid(True)
-    plt.ylabel(unit, loc='bottom', rotation=None)
+    plt.ylabel(unit, loc='bottom')
 
     ax.set_title(title, va='top')
     plt.show()
 
 
-def polar_plot_linear(x: list | np.ndarray, y: list | np.ndarray, unit: str, title: str = 'Wykres polarny'):
-    fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
-    x = to_rad(x)
-    y = linearize(y)
-    print(y)
-    print(min(y))
-    print(max(y))
-    ax.plot(x, y)
-    ax.set_rticks(np.linspace(min(y), max(y), 5))  # Less radial ticks
-    ax.set_rlabel_position(val_to_deg(-np.pi * 5 / 7))  # Move radial labels away from plotted line
-    ax.grid(True)
-    plt.ylabel(unit, loc='bottom', rotation=None)
+def plot(x: list | np.ndarray, y: list | np.ndarray, plane: str):
+    x_angles = angles(x)
+    y_normalized = normalize(y)
+    y_linear = linearize(y)
+    y_dB = convert_to_dB(y_linear)
+    # Wykres mocy w funkcji kąta obrotu anteny we współrzędnych prostokątnych w skali liniowej
+    power_linear_title = f'Wykres zależności mocy odbieranej ' \
+                         f'od\nkąta obrotu anteny w płaszczyźnie {plane} (skala liniowa).\n'
+    polar_plot(x_angles, y_normalized, unit='Moc [mW]', title=power_linear_title)
+    square_plot(x_angles, y_normalized, unit='Moc [mW]', title=power_linear_title)
 
-    ax.set_title(title, va='top')
-    plt.show()
+    # Wykres mocy w funkcji kąta obrotu anteny we współrzędnych prostokątnych w skali logarytmicznej
+    power_dB_title = f'Wykres zależności mocy odbieranej ' \
+                     f'od\nkąta obrotu anteny w płaszczyźnie {plane} (skala logarytmiczna).\n'
+    print("y_db: ", y_dB)
+    print("y: ", y)
+    polar_plot(x_angles, y_dB, unit='Moc [dB]', title=power_dB_title)
+    square_plot(x_angles, y_dB, unit='Moc [dB]', scale=(-30, 0.5), title=power_dB_title)
 
 
 def main():
-    # od 8 do 64 s
-    data = read_file(file1)
-    x, y = split_lr(data)
-    th = angles(x)
-    square_plot(th, y, unit='Moc w dBm', title='')
-    square_plot(th, linearize(y), unit='Moc w mW', axis='tight', title='')
-    polar_plot_decibel(th, y, unit='Moc w dBm', title='')
-    polar_plot_linear(th, y, unit='Moc w mW', title='')
+    # płaszczyzna H
+    dataH = read_file(fileH)
+    xH, yH = split_lr(dataH)
+    plot(xH, yH, plane='H')
+
+    # płaszczyzna E
+    dataE = read_file(fileE)
+    xE, yE = split_lr(dataE)
+    plot(xE, yE, plane='E')
 
 
 if __name__ == '__main__':
