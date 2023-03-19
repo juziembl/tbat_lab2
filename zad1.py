@@ -12,7 +12,7 @@ def angles(_list: list) -> np.ndarray:
     return np.linspace(-180, 180, len(_list))
 
 
-def normalise(_list: list) -> list:
+def normalize(_list: list) -> list:
     _list = linearize(_list)
     return [e / max(_list) for e in _list]
 
