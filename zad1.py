@@ -12,6 +12,10 @@ def angles(_list: list) -> np.ndarray:
     return np.linspace(-180, 180, len(_list))
 
 
+def linearize(_list: list | np.ndarray) -> list:
+    return [10 ** (e / 10) for e in _list]
+
+
 def normalize(_list: list) -> list:
     _list = linearize(_list)
     return [e / max(_list) for e in _list]
@@ -31,10 +35,6 @@ def to_deg(_list: list | np.ndarray) -> list:
 
 def to_rad(_list: list | np.ndarray) -> list:
     return [val_to_rad(e) for e in _list]
-
-
-def linearize(_list: list | np.ndarray) -> list:
-    return [10 ** (e / 10) for e in _list]
 
 
 def to_E(_list: list | np.ndarray) -> list:
